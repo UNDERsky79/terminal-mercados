@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Macro & Cripto en Vivo | TradingView Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- TradingView Core Script -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        tv: {
+                            bg: '#0b0e14',
+                            panel: '#151924',
+                            panelHover: '#1e2433',
+                            border: '#2a2e39',
+                            text: '#d1d4dc',
+                            muted: '#787b86',
+                            green: '#089981',
+                            red: '#f23645',
+                            blue: '#2962ff',
+                            amber: '#f59e0b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0e14;
+            color: #d1d4dc;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        /* Scrollbars personalizadas estilo TradingView */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0e14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a2e39;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b404f;
+        }
+        .tv-card {
+            background-color: #151924;
+            border: 1px solid #2a2e39;
+            border-radius: 0.5rem;
+        }
+        .btn-active {
+            background-color: #2962ff !important;
+            color: #ffffff !important;
+            border-color: #2962ff !important;
+        }
+        .preset-active {
+            border-color: #089981 !important;
+            background-color: rgba(8, 153, 129, 0.15) !important;
+            color: #10b981 !important;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col select-none overflow-hidden">
+
+    <!-- 1. TOP TICKER TAPE OFICIAL DE TRADINGVIEW -->
+    <div class="w-full h-[46px] bg-tv-panel border-b border-tv-border shrink-0 z-20">
+        <div class="tradingview-widget-container w-full h-full">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+            {
+                "symbols": [
+                    { "proName": "BITSTAMP:BTCUSD", "title": "Bitcoin" },
+                    { "proName": "BITSTAMP:ETHUSD", "title": "Ethereum" },
+                    { "proName": "OANDA:XAUUSD", "title": "Oro (Refugio)" },
+                    { "proName": "TVC:UKOIL", "title": "Petróleo Brent" },
+                    { "proName": "TVC:USOIL", "title": "Petróleo WTI" },
+                    { "proName": "FOREXCOM:SPXUSD", "title": "S&P 500" },
+                    { "proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100" },
+                    { "proName": "NYSE:YPF", "title": "YPF (ADR)" },
+                    { "proName": "TVC:VIX", "title": "Índice VIX (Miedo)" },
+                    { "proName": "TVC:DXY", "title": "Índice Dólar (DXY)" }
+                ],
+                "showSymbolLogo": true,
+                "isTransparent": true,
+                "displayMode": "adaptive",
+                "colorTheme": "dark",
+                "locale": "es"
+            }
+            </script>
+        </div>
+    </div>
+
+    <!-- 2. BARRA DE CONTROL Y ENCABEZADO -->
+    <header class="bg-tv-panel border-b border-tv-border px-3 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0 z-10">
+        <!-- Título e Indicador de Estado -->
+        <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2">
+                <span class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tv-green opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-tv-green"></span>
+                </span>
+                <h1 class="text-sm md:text-base font-bold tracking-tight text-white">Terminal Macro & Cripto en Vivo</h1>
+            </div>
+            <span class="hidden xl:inline-block text-[11px] font-mono bg-tv-bg text-tv-muted px-2 py-0.5 rounded border border-tv-border">
+                UTC-3 BUE | RSI + Medias Móviles
+            </span>
+        </div>
+
+        <!-- Controles Centrales: Presets de Mercado -->
+        <div class="flex items-center flex-wrap gap-1.5">
+            <span class="text-xs text-tv-muted mr-1 hidden sm:inline">Pantallas:</span>
+            <button onclick="applyPreset('macro')" id="preset-macro" class="preset-btn preset-active text-xs px-2.5 py-1 rounded bg-tv-bg border border-tv-border hover:bg-tv-panelHover transition font-medium flex items-center gap-1">
+                <span>🔥</span> Macro Crisis (Oro/Crudo/BTC/S&P)
+            </button>
+            <button onclick="applyPreset('cripto')" id="preset-cripto" class="preset-btn text-xs px-2.5 py-1 rounded bg-tv-bg border border-tv-border hover:bg-tv-panelHover transition font-medium flex items-center gap-1">
+                <span>🪙</span> Full Cripto (BTC/ETH/SOL/BNB)
+            </button>
+            <button onclick="applyPreset('bolsas')" id="preset-bolsas" class="preset-btn text-xs px-2.5 py-1 rounded bg-tv-bg border border-tv-border hover:bg-tv-panelHover transition font-medium flex items-center gap-1">
+                <span>🇦🇷</span> Bolsas & Energía (S&P/Nasdaq/YPF/Brent)
+            </button>
+        </div>
+
+        <!-- Controles Derechos: Temporalidad, Vista y Radar -->
+        <div class="flex items-center space-x-2">
+            <!-- Selector de Temporalidad -->
+            <div class="flex items-center bg-tv-bg p-0.5 rounded border border-tv-border">
+                <button onclick="changeInterval('15')" data-tf="15" class="tf-btn text-xs font-mono px-2 py-1 rounded text-tv-muted hover:text-white transition">15m</button>
+                <button onclick="changeInterval('60')" data-tf="60" class="tf-btn btn-active text-xs font-mono px-2 py-1 rounded text-tv-muted hover:text-white transition">1H</button>
+                <button onclick="changeInterval('240')" data-tf="240" class="tf-btn text-xs font-mono px-2 py-1 rounded text-tv-muted hover:text-white transition">4H</button>
+                <button onclick="changeInterval('D')" data-tf="D" class="tf-btn text-xs font-mono px-2 py-1 rounded text-tv-muted hover:text-white transition">1D</button>
+                <button onclick="changeInterval('W')" data-tf="W" class="tf-btn text-xs font-mono px-2 py-1 rounded text-tv-muted hover:text-white transition">1S</button>
+            </div>
+
+            <!-- Selector de Layout -->
+            <div class="flex items-center bg-tv-bg p-0.5 rounded border border-tv-border">
+                <button onclick="setLayout('grid')" id="layout-grid" class="btn-active text-xs px-2.5 py-1 rounded transition flex items-center gap-1" title="Vista Cuadrícula (4 Gráficos)">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/></svg>
+                    <span class="hidden md:inline">4 Gráficos</span>
+                </button>
+                <button onclick="setLayout('focus')" id="layout-focus" class="text-xs px-2.5 py-1 rounded text-tv-muted hover:text-white transition flex items-center gap-1" title="Vista Enfoque (1 Gráfico Grande + Watchlist)">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zm13 1a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-3v-10h3zm-4 0v10H1.5a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h9z"/></svg>
+                    <span class="hidden md:inline">Enfoque</span>
+                </button>
+            </div>
+
+            <!-- Botón Panel Radar Macro -->
+            <button onclick="toggleRadarPanel()" id="btn-radar" class="text-xs px-2.5 py-1.5 rounded bg-tv-amber/20 border border-tv-amber/50 text-tv-amber hover:bg-tv-amber/30 transition font-medium flex items-center gap-1">
+                <span>📡</span> <span class="hidden sm:inline">Radar & Notas</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 3. ÁREA CENTRAL DE TRABAJO (GRÁFICOS + BARRA LATERAL DESPLEGABLE) -->
+    <main class="flex-1 flex overflow-hidden relative p-1.5 gap-1.5 bg-tv-bg">
+        
+        <!-- CONTENEDOR DE GRÁFICOS -->
+        <div id="charts-wrapper" class="flex-1 grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-1.5 h-full w-full overflow-y-auto md:overflow-hidden">
+            
+            <!-- CUADRANTE 1 -->
+            <div id="quadrant-0" class="tv-card flex flex-col h-[380px] md:h-full overflow-hidden">
+                <div class="bg-tv-panel px-2.5 py-1 border-b border-tv-border flex items-center justify-between shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[11px] font-mono font-bold text-tv-blue bg-tv-blue/10 px-1.5 py-0.5 rounded">#1</span>
+                        <select id="select-0" onchange="updateChartSymbol(0, this.value)" class="bg-tv-bg text-xs text-white font-medium px-2 py-1 rounded border border-tv-border focus:outline-none focus:border-tv-blue cursor-pointer">
+                            <!-- Opciones inyectadas por JS -->
+                        </select>
+                        <input type="text" id="custom-0" placeholder="Ej: BINANCE:ADAUSDT" onkeydown="if(event.key==='Enter') updateCustomSymbol(0)" class="hidden sm:inline-block bg-tv-bg text-[11px] font-mono text-tv-text px-2 py-0.5 rounded border border-tv-border w-36 focus:outline-none focus:border-tv-blue" title="Escribí un ticker y presioná Enter">
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <button onclick="maximizeQuadrant(0)" class="text-tv-muted hover:text-white p-1 rounded hover:bg-tv-panelHover" title="Maximizar / Restaurar este gráfico">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="tv_chart_0" class="flex-1 w-full h-full"></div>
+            </div>
+
+            <!-- CUADRANTE 2 -->
+            <div id="quadrant-1" class="tv-card flex flex-col h-[380px] md:h-full overflow-hidden">
+                <div class="bg-tv-panel px-2.5 py-1 border-b border-tv-border flex items-center justify-between shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[11px] font-mono font-bold text-tv-amber bg-tv-amber/10 px-1.5 py-0.5 rounded">#2</span>
+                        <select id="select-1" onchange="updateChartSymbol(1, this.value)" class="bg-tv-bg text-xs text-white font-medium px-2 py-1 rounded border border-tv-border focus:outline-none focus:border-tv-blue cursor-pointer">
+                        </select>
+                        <input type="text" id="custom-1" placeholder="Ej: TVC:SILVER" onkeydown="if(event.key==='Enter') updateCustomSymbol(1)" class="hidden sm:inline-block bg-tv-bg text-[11px] font-mono text-tv-text px-2 py-0.5 rounded border border-tv-border w-36 focus:outline-none focus:border-tv-blue">
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <button onclick="maximizeQuadrant(1)" class="text-tv-muted hover:text-white p-1 rounded hover:bg-tv-panelHover" title="Maximizar / Restaurar este gráfico">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="tv_chart_1" class="flex-1 w-full h-full"></div>
+            </div>
+
+            <!-- CUADRANTE 3 -->
+            <div id="quadrant-2" class="tv-card flex flex-col h-[380px] md:h-full overflow-hidden">
+                <div class="bg-tv-panel px-2.5 py-1 border-b border-tv-border flex items-center justify-between shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[11px] font-mono font-bold text-tv-red bg-tv-red/10 px-1.5 py-0.5 rounded">#3</span>
+                        <select id="select-2" onchange="updateChartSymbol(2, this.value)" class="bg-tv-bg text-xs text-white font-medium px-2 py-1 rounded border border-tv-border focus:outline-none focus:border-tv-blue cursor-pointer">
+                        </select>
+                        <input type="text" id="custom-2" placeholder="Ej: NYSE:VIST" onkeydown="if(event.key==='Enter') updateCustomSymbol(2)" class="hidden sm:inline-block bg-tv-bg text-[11px] font-mono text-tv-text px-2 py-0.5 rounded border border-tv-border w-36 focus:outline-none focus:border-tv-blue">
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <button onclick="maximizeQuadrant(2)" class="text-tv-muted hover:text-white p-1 rounded hover:bg-tv-panelHover" title="Maximizar / Restaurar este gráfico">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="tv_chart_2" class="flex-1 w-full h-full"></div>
+            </div>
+
+            <!-- CUADRANTE 4 -->
+            <div id="quadrant-3" class="tv-card flex flex-col h-[380px] md:h-full overflow-hidden">
+                <div class="bg-tv-panel px-2.5 py-1 border-b border-tv-border flex items-center justify-between shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[11px] font-mono font-bold text-tv-green bg-tv-green/10 px-1.5 py-0.5 rounded">#4</span>
+                        <select id="select-3" onchange="updateChartSymbol(3, this.value)" class="bg-tv-bg text-xs text-white font-medium px-2 py-1 rounded border border-tv-border focus:outline-none focus:border-tv-blue cursor-pointer">
+                        </select>
+                        <input type="text" id="custom-3" placeholder="Ej: BCBA:IMV" onkeydown="if(event.key==='Enter') updateCustomSymbol(3)" class="hidden sm:inline-block bg-tv-bg text-[11px] font-mono text-tv-text px-2 py-0.5 rounded border border-tv-border w-36 focus:outline-none focus:border-tv-blue">
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <button onclick="maximizeQuadrant(3)" class="text-tv-muted hover:text-white p-1 rounded hover:bg-tv-panelHover" title="Maximizar / Restaurar este gráfico">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="tv_chart_3" class="flex-1 w-full h-full"></div>
+            </div>
+
+        </div>
+
+        <!-- PANEL DE WATCHLIST PARA MODO ENFOQUE (Oculto por defecto) -->
+        <div id="focus-watchlist" class="hidden w-72 tv-card flex-col h-full shrink-0 overflow-hidden">
+            <div class="p-2.5 border-b border-tv-border bg-tv-panel flex items-center justify-between">
+                <span class="text-xs font-bold text-white uppercase tracking-wider">Watchlist Rápida</span>
+                <span class="text-[10px] font-mono text-tv-muted">Click para cargar</span>
+            </div>
+            <div id="watchlist-items" class="flex-1 overflow-y-auto p-1.5 space-y-1">
+                <!-- Generado dinámicamente -->
+            </div>
+        </div>
+
+        <!-- 4. PANEL COLAPSABLE: RADAR MACRO, CALCULADORA Y NOTAS -->
+        <aside id="radar-panel" class="w-80 md:w-96 tv-card flex flex-col h-full shrink-0 overflow-hidden transition-all duration-200">
+            <!-- Cabecera del Panel -->
+            <div class="p-3 border-b border-tv-border bg-tv-panel flex items-center justify-between shrink-0">
+                <div class="flex items-center space-x-2">
+                    <span>📡</span>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-white">Radar Macro & Cobertura</h2>
+                </div>
+                <button onclick="toggleRadarPanel()" class="text-tv-muted hover:text-white text-xs px-1.5 py-0.5 rounded bg-tv-bg border border-tv-border">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Contenido Scrolleable -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
+                
+                <!-- Semáforo de Correlaciones en Vivo -->
+                <div class="space-y-2">
+                    <h3 class="text-[11px] font-semibold uppercase text-tv-muted tracking-wider">Termómetro de Mercado</h3>
+                    
+                    <div class="p-2.5 rounded bg-tv-bg border-l-2 border-tv-red border border-tv-border">
+                        <div class="flex justify-between items-center font-semibold text-white mb-0.5">
+                            <span>🛢️ Petróleo Brent > $110</span>
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-tv-red/20 text-tv-red">ALERTA INFLACIÓN</span>
+                        </div>
+                        <p class="text-tv-muted text-[11px] leading-relaxed">
+                            Presiona fletes y naftas. Impide que la Fed baje tasas rápido. Castiga tecnológicas y favorece petroleras (YPF, Vista, Tenaris).
+                        </p>
+                    </div>
+
+                    <div class="p-2.5 rounded bg-tv-bg border-l-2 border-tv-amber border border-tv-border">
+                        <div class="flex justify-between items-center font-semibold text-white mb-0.5">
+                            <span>🥇 Oro (XAU) & PAXG en Máximos</span>
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-tv-amber/20 text-tv-amber">FLUJO REFUGIO</span>
+                        </div>
+                        <p class="text-tv-muted text-[11px] leading-relaxed">
+                            Arriba de $4.000/oz indica cobertura institucional fuerte ante riesgo geopolítico y desconfianza en deuda soberana.
+                        </p>
+                    </div>
+
+                    <div class="p-2.5 rounded bg-tv-bg border-l-2 border-tv-blue border border-tv-border">
+                        <div class="flex justify-between items-center font-semibold text-white mb-0.5">
+                            <span>₿ Bitcoin: Zona $80.000 - $81.300</span>
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-tv-blue/20 text-tv-blue">SOPORTE CLAVE</span>
+                        </div>
+                        <p class="text-tv-muted text-[11px] leading-relaxed">
+                            Piso psicológico actual. Si pierde $80k con volumen habilita barrida de liquidez; arriba de $84k retoma estructura alcista.
+                        </p>
+                    </div>
+
+                    <div class="p-2.5 rounded bg-tv-bg border-l-2 border-tv-green border border-tv-border">
+                        <div class="flex justify-between items-center font-semibold text-white mb-0.5">
+                            <span>📉 S&P 500 vs Medias Móviles</span>
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-tv-green/20 text-tv-green">ROTACIÓN</span>
+                        </div>
+                        <p class="text-tv-muted text-[11px] leading-relaxed">
+                            Debajo de EMA 20 (7.722 pts) hay cautela de corto plazo. Vigilar el VIX: si supera 25-30 puntos hay venta forzada.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Calculadora Rápida de Posición / Stop Loss -->
+                <div class="pt-2 border-t border-tv-border space-y-2">
+                    <h3 class="text-[11px] font-semibold uppercase text-tv-muted tracking-wider">Calculadora Rápida de Riesgo / Stop</h3>
+                    <div class="grid grid-cols-2 gap-2 bg-tv-bg p-2.5 rounded border border-tv-border">
+                        <div>
+                            <label class="block text-[10px] text-tv-muted mb-1">Precio Entrada ($)</label>
+                            <input type="number" id="calc-entry" value="81600" oninput="runQuickCalc()" class="w-full bg-tv-panel border border-tv-border rounded px-2 py-1 font-mono text-white focus:outline-none focus:border-tv-blue">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-tv-muted mb-1">Stop Loss ($)</label>
+                            <input type="number" id="calc-stop" value="79800" oninput="runQuickCalc()" class="w-full bg-tv-panel border border-tv-border rounded px-2 py-1 font-mono text-white focus:outline-none focus:border-tv-blue">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-tv-muted mb-1">Take Profit ($)</label>
+                            <input type="number" id="calc-tp" value="85500" oninput="runQuickCalc()" class="w-full bg-tv-panel border border-tv-border rounded px-2 py-1 font-mono text-white focus:outline-none focus:border-tv-blue">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-tv-muted mb-1">Capital En Riesgo ($)</label>
+                            <input type="number" id="calc-risk" value="100" oninput="runQuickCalc()" class="w-full bg-tv-panel border border-tv-border rounded px-2 py-1 font-mono text-white focus:outline-none focus:border-tv-blue">
+                        </div>
+                        <div class="col-span-2 pt-1.5 border-t border-tv-border flex justify-between items-center font-mono text-[11px]">
+                            <span id="calc-result-dist" class="text-tv-red">Stop: -2.21%</span>
+                            <span id="calc-result-rr" class="text-tv-green font-bold">R:R 1 : 2.17</span>
+                            <span id="calc-result-size" class="text-tv-text">Pos: $4,533</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anotador Personal Persistente (localStorage) -->
+                <div class="pt-2 border-t border-tv-border space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-[11px] font-semibold uppercase text-tv-muted tracking-wider">Tus Niveles y Notas Operativas</h3>
+                        <span id="save-badge" class="text-[10px] text-tv-green font-mono opacity-0 transition-opacity">Guardado ✓</span>
+                    </div>
+                    <textarea id="trader-notes" rows="5" oninput="saveTraderNotes()" placeholder="Anotá acá tus soportes, alertas de BingX, precios de nafta/costos o niveles de entrada..." class="w-full bg-tv-bg border border-tv-border rounded p-2.5 text-xs font-mono text-tv-text focus:outline-none focus:border-tv-blue resize-y"></textarea>
+                </div>
+
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- LÓGICA DE LA APLICACIÓN -->
+    <script>
+        // Catálogo completo de activos para los selectores rápidos
+        const SYMBOLS_CATALOG = [
+            { group: "🪙 Criptomonedas", items: [
+                { symbol: "BINANCE:BTCUSDT", label: "BTC/USDT (Bitcoin)" },
+                { symbol: "BINANCE:ETHUSDT", label: "ETH/USDT (Ethereum)" },
+                { symbol: "BINANCE:SOLUSDT", label: "SOL/USDT (Solana)" },
+                { symbol: "BINANCE:BNBUSDT", label: "BNB/USDT (Binance Coin)" },
+                { symbol: "BINANCE:XRPUSDT", label: "XRP/USDT (Ripple)" },
+                { symbol: "BINANCE:PAXGUSDT", label: "PAXG/USDT (Oro Cripto)" },
+                { symbol: "BINANCE:DOGEUSDT", label: "DOGE/USDT (Dogecoin)" },
+                { symbol: "BINANCE:ADAUSDT", label: "ADA/USDT (Cardano)" }
+            ]},
+            { group: "🛢️ Materias Primas & Refugio", items: [
+                { symbol: "OANDA:XAUUSD", label: "XAU/USD (Oro Spot)" },
+                { symbol: "TVC:UKOIL", label: "BRENT (Petróleo Brent)" },
+                { symbol: "TVC:USOIL", label: "WTI (Petróleo EE.UU.)" },
+                { symbol: "TVC:SILVER", label: "XAG/USD (Plata)" }
+            ]},
+            { group: "🌎 Bolsas Globales & Macro", items: [
+                { symbol: "FOREXCOM:SPXUSD", label: "S&P 500 (Wall Street)" },
+                { symbol: "FOREXCOM:NSXUSD", label: "Nasdaq 100 (Tecnológicas)" },
+                { symbol: "TVC:DJI", label: "Dow Jones Industrial" },
+                { symbol: "TVC:VIX", label: "VIX (Índice de Volatilidad/Miedo)" },
+                { symbol: "TVC:DXY", label: "DXY (Índice Dólar Global)" },
+                { symbol: "INDEX:NKY", label: "Nikkei 225 (Japón)" }
+            ]},
+            { group: "🇦🇷 Argentina & Energía", items: [
+                { symbol: "NYSE:YPF", label: "YPF (ADR Nueva York)" },
+                { symbol: "NYSE:VIST", label: "Vista Energy (Vaca Muerta)" },
+                { symbol: "NYSE:TEN", label: "Tenaris (Acero/Tubos)" },
+                { symbol: "NYSE:PAM", label: "Pampa Energía (ADR)" },
+                { symbol: "NYSE:GGAL", label: "Grupo Fin. Galicia (ADR)" },
+                { symbol: "BCBA:IMV", label: "S&P Merval Index (BCBA)" }
+            ]}
+        ];
+
+        // Configuraciones de Presets
+        const PRESETS = {
+            macro: ["BINANCE:BTCUSDT", "OANDA:XAUUSD", "TVC:UKOIL", "FOREXCOM:SPXUSD"],
+            cripto: ["BINANCE:BTCUSDT", "BINANCE:ETHUSDT", "BINANCE:SOLUSDT", "BINANCE:BNBUSDT"],
+            bolsas: ["FOREXCOM:SPXUSD", "FOREXCOM:NSXUSD", "NYSE:YPF", "TVC:UKOIL"]
+        };
+
+        // Estado global de la terminal
+        let state = {
+            charts: ["BINANCE:BTCUSDT", "OANDA:XAUUSD", "TVC:UKOIL", "FOREXCOM:SPXUSD"],
+            interval: "60", // 1 Hora por defecto
+            layout: "grid", // 'grid' | 'focus'
+            maximizedIndex: null
+        };
+
+        // Poblar los <select> de cada cuadrante y la Watchlist lateral
+        function populateSelectors() {
+            for (let i = 0; i < 4; i++) {
+                const selectEl = document.getElementById(`select-${i}`);
+                selectEl.innerHTML = "";
+                SYMBOLS_CATALOG.forEach(group => {
+                    const optgroup = document.createElement("optgroup");
+                    optgroup.label = group.group;
+                    group.items.forEach(item => {
+                        const option = document.createElement("option");
+                        option.value = item.symbol;
+                        option.textContent = item.label;
+                        if (item.symbol === state.charts[i]) {
+                            option.selected = true;
+                        }
+                        optgroup.appendChild(option);
+                    });
+                    selectEl.appendChild(optgroup);
+                });
+            }
+
+            // Poblar Watchlist del modo enfoque
+            const watchlistContainer = document.getElementById("watchlist-items");
+            watchlistContainer.innerHTML = "";
+            SYMBOLS_CATALOG.forEach(group => {
+                const header = document.createElement("div");
+                header.className = "text-[10px] font-bold text-tv-muted px-2 pt-2 pb-1 uppercase";
+                header.textContent = group.group;
+                watchlistContainer.appendChild(header);
+
+                group.items.forEach(item => {
+                    const btn = document.createElement("button");
+                    btn.className = "w-full text-left px-2.5 py-1.5 rounded text-xs hover:bg-tv-panelHover flex items-center justify-between transition group";
+                    btn.innerHTML = `
+                        <span class="font-medium text-tv-text group-hover:text-white">${item.label}</span>
+                        <span class="text-[10px] font-mono text-tv-muted">${item.symbol.split(':')[1]}</span>
+                    `;
+                    btn.onclick = () => {
+                        updateChartSymbol(0, item.symbol);
+                    };
+                    watchlistContainer.appendChild(btn);
+                });
+            });
+        }
+
+        // Instanciar un gráfico avanzado de TradingView en un contenedor específico
+        function renderChart(index) {
+            const containerId = `tv_chart_${index}`;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = "";
+
+            const symbol = state.charts[index];
+            const selectEl = document.getElementById(`select-${index}`);
+            if (selectEl) selectEl.value = symbol;
+
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": symbol,
+                "interval": state.interval,
+                "timezone": "America/Argentina/Buenos_Aires",
+                "theme": "dark",
+                "style": "1",
+                "locale": "es",
+                "backgroundColor": "#151924",
+                "gridColor": "rgba(42, 46, 57, 0.4)",
+                "enable_publishing": false,
+                "hide_top_toolbar": false,
+                "hide_legend": false,
+                "save_image": false,
+                "container_id": containerId,
+                "studies": [
+                    "MASimple@tv-basicstudies",
+                    "RSI@tv-basicstudies"
+                ]
+            });
+        }
+
+        // Renderizar los 4 gráficos
+        function renderAllCharts() {
+            for (let i = 0; i < 4; i++) {
+                renderChart(i);
+            }
+        }
+
+        // Cambiar el símbolo de un cuadrante específico desde el dropdown
+        function updateChartSymbol(index, newSymbol) {
+            state.charts[index] = newSymbol;
+            renderChart(index);
+        }
+
+        // Cambiar a un símbolo personalizado escrito por el usuario
+        function updateCustomSymbol(index) {
+            const input = document.getElementById(`custom-${index}`);
+            const val = input.value.trim().toUpperCase();
+            if (!val) return;
+            state.charts[index] = val;
+            renderChart(index);
+            input.value = "";
+        }
+
+        // Cambiar la temporalidad global (15m, 1H, 4H, 1D, 1S)
+        function changeInterval(newInterval) {
+            state.interval = newInterval;
+            document.querySelectorAll(".tf-btn").forEach(btn => {
+                if (btn.getAttribute("data-tf") === newInterval) {
+                    btn.classList.add("btn-active");
+                } else {
+                    btn.classList.remove("btn-active");
+                }
+            });
+            renderAllCharts();
+        }
+
+        // Aplicar uno de los 3 Presets Rápidos
+        function applyPreset(presetKey) {
+            if (!PRESETS[presetKey]) return;
+            state.charts = [...PRESETS[presetKey]];
+
+            document.querySelectorAll(".preset-btn").forEach(btn => btn.classList.remove("preset-active"));
+            document.getElementById(`preset-${presetKey}`).classList.add("preset-active");
+
+            populateSelectors();
+            renderAllCharts();
+        }
+
+        // Cambiar entre Vista Cuadrícula (4 gráficos) y Vista Enfoque (1 gráfico grande + Watchlist)
+        function setLayout(mode) {
+            state.layout = mode;
+            state.maximizedIndex = null;
+
+            const wrapper = document.getElementById("charts-wrapper");
+            const watchlist = document.getElementById("focus-watchlist");
+            const btnGrid = document.getElementById("layout-grid");
+            const btnFocus = document.getElementById("layout-focus");
+
+            if (mode === "focus") {
+                btnFocus.classList.add("btn-active");
+                btnGrid.classList.remove("btn-active");
+
+                wrapper.className = "flex-1 grid grid-cols-1 grid-rows-1 gap-1.5 h-full w-full overflow-hidden";
+                document.getElementById("quadrant-0").classList.remove("hidden");
+                document.getElementById("quadrant-1").classList.add("hidden");
+                document.getElementById("quadrant-2").classList.add("hidden");
+                document.getElementById("quadrant-3").classList.add("hidden");
+
+                watchlist.classList.remove("hidden");
+                watchlist.classList.add("flex");
+            } else {
+                btnGrid.classList.add("btn-active");
+                btnFocus.classList.remove("btn-active");
+
+                wrapper.className = "flex-1 grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-1.5 h-full w-full overflow-y-auto md:overflow-hidden";
+                for (let i = 0; i < 4; i++) {
+                    document.getElementById(`quadrant-${i}`).classList.remove("hidden");
+                }
+
+                watchlist.classList.add("hidden");
+                watchlist.classList.remove("flex");
+            }
+        }
+
+        // Maximizar o restaurar un cuadrante individual dentro de la cuadrícula
+        function maximizeQuadrant(index) {
+            const wrapper = document.getElementById("charts-wrapper");
+            if (state.maximizedIndex === index) {
+                // Restaurar vista de 4
+                state.maximizedIndex = null;
+                wrapper.className = "flex-1 grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-1.5 h-full w-full overflow-y-auto md:overflow-hidden";
+                for (let i = 0; i < 4; i++) {
+                    document.getElementById(`quadrant-${i}`).classList.remove("hidden");
+                }
+            } else {
+                // Maximizar el cuadrante elegido
+                state.maximizedIndex = index;
+                wrapper.className = "flex-1 grid grid-cols-1 grid-rows-1 gap-1.5 h-full w-full overflow-hidden";
+                for (let i = 0; i < 4; i++) {
+                    if (i === index) {
+                        document.getElementById(`quadrant-${i}`).classList.remove("hidden");
+                    } else {
+                        document.getElementById(`quadrant-${i}`).classList.add("hidden");
+                    }
+                }
+            }
+        }
+
+        // Mostrar / Ocultar el Panel Radar Macro lateral
+        function toggleRadarPanel() {
+            const panel = document.getElementById("radar-panel");
+            panel.classList.toggle("hidden");
+        }
+
+        // Calculadora Rápida de Riesgo / Stop Loss
+        function runQuickCalc() {
+            const entry = parseFloat(document.getElementById("calc-entry").value) || 0;
+            const stop = parseFloat(document.getElementById("calc-stop").value) || 0;
+            const tp = parseFloat(document.getElementById("calc-tp").value) || 0;
+            const riskUsd = parseFloat(document.getElementById("calc-risk").value) || 0;
+
+            if (entry <= 0 || stop <= 0 || entry === stop) return;
+
+            const stopDistPct = Math.abs((entry - stop) / entry) * 100;
+            const rewardDistPct = Math.abs((tp - entry) / entry) * 100;
+            const rr = rewardDistPct / stopDistPct;
+            const positionSize = riskUsd / (stopDistPct / 100);
+
+            document.getElementById("calc-result-dist").textContent = `Stop: -${stopDistPct.toFixed(2)}%`;
+            document.getElementById("calc-result-rr").textContent = `R:R 1 : ${rr.toFixed(2)}`;
+            document.getElementById("calc-result-size").textContent = `Pos: $${Math.round(positionSize).toLocaleString('es-AR')}`;
+        }
+
+        // Guardar y cargar notas operativas en localStorage
+        function saveTraderNotes() {
+            const notes = document.getElementById("trader-notes").value;
+            try {
+                localStorage.setItem("tv_terminal_macro_notes", notes);
+                const badge = document.getElementById("save-badge");
+                badge.classList.remove("opacity-0");
+                setTimeout(() => badge.classList.add("opacity-0"), 1500);
+            } catch (e) {
+                // Ignorar errores de almacenamiento en iframes restringidos
+            }
+        }
+
+        function loadTraderNotes() {
+            const defaultNotes = "• BTC: Soporte fuerte en $80.000 - $81.300. Arriba de $84k habilita long.\n• Petróleo Brent: Vigilar zona $114-$116 por impacto inflacionario.\n• Cobertura: PAXG/USDT y Oro firme arriba de $4.050.\n• Merval / YPF: Traccionan con el crudo alto.";
+            try {
+                const saved = localStorage.getItem("tv_terminal_macro_notes");
+                document.getElementById("trader-notes").value = saved !== null ? saved : defaultNotes;
+            } catch (e) {
+                document.getElementById("trader-notes").value = defaultNotes;
+            }
+        }
+
+        // Inicialización al cargar la ventana
+        window.onload = function () {
+            populateSelectors();
+            renderAllCharts();
+            runQuickCalc();
+            loadTraderNotes();
+        };
+    </script>
+</body>
+</html>
